@@ -1,0 +1,769 @@
+//VERILOG CODE FOR MULTIPLIER BASED BLOCK LMS ADAPTIVE FILTER
+//MAIN HIGH LEVEL FLOW VERILOG CODE
+module adf(yk0,yk1,yk2,yk3,xk0,xk1,xk2,xk3,dk0,dk1,dk2,dk3,sel,muu,rst,clk);
+output [15:0]yk0,yk1,yk2,yk3;
+input [7:0]xk0,xk1,xk2,xk3;
+input [15:0]dk0,dk1,dk2,dk3;
+input clk,rst;
+input sel;
+input [3:0]muu;
+wire [15:0]rk0,rk1,rk2,rk3;
+wire [7:0]xj0,xj1,xj2,xj3,xj4,xj5,xj6,xj7,xj8,xj9,xj10,xj11,xj12,xj13,xj14,xj15,xj16,xj17,xj18,xj19,xj20,xj21,xj22,xj23,xj24,xj25,xj26,xj27,xj28,xj29,xj30,xj31;
+wire [15:0]u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10,u11,u12,u13,u14,u15,u16,u17,u18,u19,u20,u21,u22,u23,u24,u25,u26,u27,u28,u29,u30,u31;
+pe pe1(xj0,xj1,xj2,xj3,u0,u1,u2,u3,xk0,xk1,xk2,xk3,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe2(xj4,xj5,xj6,xj7,u4,u5,u6,u7,xj0,xj1,xj2,xj3,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe3(xj8,xj9,xj10,xj11,u8,u9,u10,u11,xj4,xj5,xj6,xj7,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe4(xj12,xj13,xj14,xj15,u12,u13,u14,u15,xj8,xj9,xj10,xj11,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe5(xj16,xj17,xj18,xj19,u16,u17,u18,u19,xj12,xj13,xj14,xj15,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe6(xj20,xj21,xj22,xj23,u20,u21,u22,u23,xj16,xj17,xj18,xj19,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe7(xj24,xj25,xj26,xj27,u24,u25,u26,u27,xj20,xj21,xj22,xj23,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+pe pe8(xj28,xj29,xj30,xj31,u28,u29,u30,u31,xj24,xj25,xj26,xj27,rk0[15:8],rk1[15:8],rk2[15:8],rk3[15:8],sel,clk,rst);
+au au1(yk0,yk1,yk2,yk3,u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10,u11,u12,u13,u14,u15,u16,u17,u18,u19,u20,u21,u22,u23,u24,u25,u26,u27,u28,u29,u30,u31);
+ecu ecu1(rk0,rk1,rk2,rk3,dk0,dk1,dk2,dk3,yk0,yk1,yk2,yk3,muu,rst,clk);
+endmodule
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//******START OF VERILOG CODE FOR SUB-BLOCKS OF ADAPTIVE FILTER*****************
+module pe(a4,a5,a6,a7,uj0,uj1,uj2,uj3,x0,x1,x2,x3,r0,r1,r2,r3,sel,clk,rst);
+input [7:0]x0,x1,x2,x3,r0,r1,r2,r3;
+input sel,clk,rst;
+output [7:0]a4,a5,a6,a7;
+output [15:0]uj0,uj1,uj2,uj3;
+wire [15:0]pdt0,pdt1,pdt2,pdt3,pdt4,pdt5,pdt6,pdt7,pdt8,pdt9,pdt10,pdt11,pdt12,pdt13,pdt14,pdt15;
+wire [15:0]c0,c1,c2,c3;
+wire [15:0]ck0,ck1,ck2,ck3;
+wire [15:0]sum1,sum2,sum3,sum4;
+wire [7:0]out1,out2,out3,out0;
+register reg1(a4,x0,rst,clk);
+register reg2(a5,x1,rst,clk);
+register reg3(a6,x2,rst,clk);
+register reg4(a7,x3,rst,clk);
+mux m1(out0,sel,c0[15:8],r0);
+mux m2(out1,sel,c1[15:8],r1);
+mux m3(out2,sel,c2[15:8],r2);
+mux m4(out3,sel,c3[15:8],r3);
+multiplier mul0(pdt0,x0,out0);
+multiplier mul1(pdt1,x1,out1);
+multiplier mul2(pdt2,x2,out2);
+multiplier mul3(pdt3,x3,out3);
+multiplier mul4(pdt4,x1,out0);
+multiplier mul5(pdt5,x2,out1);
+multiplier mul6(pdt6,x3,out2);
+multiplier mul7(pdt7,a4,out3);
+multiplier mul8(pdt8,x2,out0);
+multiplier mul9(pdt9,x3,out1);
+multiplier mul10(pdt10,a4,out2);
+multiplier mul11(pdt11,a5,out3);
+multiplier mul12(pdt12,x3,out0);
+multiplier mul13(pdt13,a4,out1);
+multiplier mul14(pdt14,a5,out2);
+multiplier mul15(pdt15,a6,out3);
+addertree at1(sum1,pdt0,pdt1,pdt2,pdt3);
+addertree at2(sum2,pdt4,pdt5,pdt6,pdt7);
+addertree at3(sum3,pdt8,pdt9,pdt10,pdt11);
+addertree at4(sum4,pdt12,pdt13,pdt14,pdt15);
+dmux d1(ck0,uj0,sel,sum1);
+dmux d2(ck1,uj1,sel,sum2);
+dmux d3(ck2,uj2,sel,sum3);
+dmux d4(ck3,uj3,sel,sum4);
+accumulator acc1(c0,ck0,clk,rst);
+accumulator acc2(c1,ck1,clk,rst);
+accumulator acc3(c2,ck2,clk,rst);
+accumulator acc4(c3,ck3,clk,rst);
+endmodule
+///////////////////////////////////////////
+module register( Q,D,rst,clk);
+input [7:0]D;
+input clk,rst;
+output [7:0]Q;
+reg [7:0]Q;
+
+always @(posedge clk)
+begin
+   if (rst)
+    Q <=8'h0;
+ else
+begin
+if(D>=3)
+    Q<=D-8'h1;
+else if(D==0)
+    Q<=0;
+else
+    Q<=D+8'h1;
+  end
+end
+endmodule
+/////////////////////////////////////////////
+module mux(out,sel,a,b);
+input sel;
+output [7:0]out;
+input [7:0]a,b;
+reg [7:0]out;
+always @(sel )
+begin
+case(sel)
+0:out=a;
+1:out=b;
+endcase
+end
+endmodule
+//////////////////////////////////////////////
+module addertree(out,A, B, C, D);   
+input	[15:0] A, B, C, D;	
+output	[15:0] out;
+assign  out = A +B + C +D;
+endmodule
+////////////////////////////////////////////
+module dmux(dout1,dout2,sel,din);
+output [15:0]dout1,dout2;
+input [15:0]din;
+input sel;
+reg [15:0]dout1,dout2;
+always @(din or sel)
+begin
+if(sel==0)
+begin
+dout1=16'b0000000000000000;
+dout2=din;
+end
+else
+begin
+dout1=din;
+dout2=16'b0000000000000000;
+end
+end
+endmodule
+/////////////////////////////////////////
+module accumulator(Q,D,C, CLR); 
+input C, CLR; 
+input  [15:0] D; 
+output [15:0] Q; 
+reg    [15:0] tmp;  
+always @(posedge C or posedge CLR) 
+begin 
+if (CLR) 
+tmp = 16'b0000000000000000; 
+else 
+tmp = tmp + D; 
+end 
+assign Q = tmp; 
+endmodule
+//////////////////////////////////////////////////////////////////
+module ecu(r0,r1,r2,r3,d0,d1,d2,d3,y0,y1,y2,y3,mu,rst,clk);
+input [15:0]y0,y1,y2,y3,d0,d1,d2,d3;
+input clk,rst;
+input [3:0]mu;
+output [15:0]r0,r1,r2,r3;
+wire [15:0]result0,result1,result2,result3,g0,g1,g2,g3;
+subtractor s1(result0,d0,y0);
+subtractor s2(result1,d1,y1);
+subtractor s3(result2,d2,y2);
+subtractor s4(result3,d3,y3);
+barrel_shifter_16 bs1(g0,result0,mu);
+barrel_shifter_16 bs2(g1,result1,mu);
+barrel_shifter_16 bs3(g2,result2,mu);
+barrel_shifter_16 bs4(g3,result3,mu);
+register_16 rs1(r0,g0,rst,clk);
+register_16 rs2(r1,g1,rst,clk);
+register_16 rs3(r2,g2,rst,clk);
+register_16 rs4(r3,g3,rst,clk);
+endmodule
+///////////////////////////////////////////////////////
+module subtractor(res,a,b);
+ input  [15:0] a;
+ input  [15:0] b;
+ output [15:0] res;
+ reg    [15:0] res;
+ always @(a or b)
+ begin
+ res = a - b;
+ end
+ endmodule
+//////////////////////////////////////////////////////////
+module barrel_shifter_16(Y, A, S);
+output [15:0] Y;  // The shifted result.
+input [15:0]  A;  // The value to be shifted.
+input [3:0] 	 S;  // The amount to shift.
+multiplexer_16_4 #(1) mux0(Y[0], 
+			      A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7],
+			      A[8], A[9], A[10], A[11], A[12], A[13], A[14], A[15], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux1(Y[1], 
+			      A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8], 
+			      A[9], A[10], A[11], A[12], A[13], A[14], A[15], A[0],
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux2(Y[2], 
+			      A[2], A[3], A[4], A[5], A[6], A[7], A[8], A[9], 
+			      A[10], A[11], A[12], A[13], A[14], A[15], A[0], A[1], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux3(Y[3], 
+			      A[3], A[4], A[5], A[6], A[7], A[8], A[9], A[10], 
+			      A[11], A[12], A[13], A[14], A[15], A[0], A[1], A[2],  
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux4(Y[4], 
+			      A[4], A[5], A[6], A[7], A[8], A[9], A[10], A[11], 
+			      A[12], A[13], A[14], A[15], A[0], A[1], A[2], A[3],  
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux5(Y[5], 
+			      A[5], A[6], A[7], A[8], A[9], A[10], A[11], A[12], 
+			      A[13], A[14], A[15], A[0], A[1], A[2], A[3], A[4], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux6(Y[6], 
+			      A[6], A[7], A[8], A[9], A[10], A[11], A[12], A[13], 
+			      A[14], A[15], A[0], A[1], A[2], A[3], A[4], A[5], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux7(Y[7], 
+			      A[7], A[8], A[9], A[10], A[11], A[12], A[13], A[14], 
+			      A[15], A[0], A[1], A[2], A[3], A[4], A[5], A[6], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux8(Y[8], 
+			      A[8], A[9], A[10], A[11], A[12], A[13], A[14], A[15], 
+			      A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux9(Y[9], 
+			      A[9], A[10], A[11], A[12], A[13], A[14], A[15], A[0], 
+			      A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux10(Y[10], 
+			      A[10], A[11], A[12], A[13], A[14], A[15], A[0], A[1], 
+			      A[2], A[3], A[4], A[5], A[6], A[7], A[8], A[9], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux11(Y[11], 
+			      A[11], A[12], A[13], A[14], A[15], A[0], A[1], A[2], 
+			      A[3], A[4], A[5], A[6], A[7], A[8], A[9], A[10], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux12(Y[12], 
+			      A[12], A[13], A[14], A[15], A[0], A[1], A[2], A[3], 
+			      A[4], A[5], A[6], A[7], A[8], A[9], A[10], A[11], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux13(Y[13], 
+			      A[13], A[14], A[15], A[0], A[1], A[2], A[3], A[4], 
+			      A[5], A[6], A[7], A[8], A[9], A[10], A[11], A[12], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux14(Y[14], 
+			      A[14], A[15], A[0], A[1], A[2], A[3], A[4], A[5], 
+			      A[6], A[7], A[8], A[9], A[10], A[11], A[12], A[13], 
+			      S[3], S[2], S[1], S[0]);
+multiplexer_16_4 #(1) mux15(Y[15], 
+			      A[15], A[0], A[1], A[2], A[3], A[4], A[5], A[6], 
+			      A[7], A[8], A[9], A[10], A[11], A[12], A[13], A[14], 
+			      S[3], S[2], S[1], S[0]);
+endmodule // barrel_shifter_16
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+module multiplexer_16_4(X, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, S3, S2, S1, S0);
+parameter WIDTH=16;     // How many bits wide are the lines
+output [WIDTH-1:0] X;   // The output line
+input [WIDTH-1:0]  A15;  // Input line with id 4'b1111
+input [WIDTH-1:0]  A14;  // Input line with id 4'b1110
+input [WIDTH-1:0]  A13;  // Input line with id 4'b1101
+input [WIDTH-1:0]  A12;  // Input line with id 4'b1100
+input [WIDTH-1:0]  A11;  // Input line with id 4'b1011
+input [WIDTH-1:0]  A10;  // Input line with id 4'b1010
+input [WIDTH-1:0]  A9;   // Input line with id 4'b1001
+input [WIDTH-1:0]  A8;   // Input line with id 4'b1000
+input [WIDTH-1:0]  A7;   // Input line with id 4'b0111
+input [WIDTH-1:0]  A6;   // Input line with id 4'b0110
+input [WIDTH-1:0]  A5;   // Input line with id 4'b0101
+input [WIDTH-1:0]  A4;   // Input line with id 4'b0100
+input [WIDTH-1:0]  A3;   // Input line with id 4'b0011
+input [WIDTH-1:0]  A2;   // Input line with id 4'b0010
+input [WIDTH-1:0]  A1;   // Input line with id 4'b0001
+input [WIDTH-1:0]  A0;   // Input line with id 4'b0000
+input S3;   // Most significant selection bit
+input S2;   
+input S1;   
+input S0;   // Least significant selection bit
+assign X = (S3 == 0 
+	       ? (S2 == 0 
+		  ? (S1 == 0 
+		     ? (S0 == 0 
+			? A0       // {S3,S2,S1,S0} = 4'b0000
+			: A1)      // {S3,S2,S1,S0} = 4'b0001
+		     : (S0 == 0 
+			? A2       // {S3,S2,S1,S0} = 4'b0010
+			: A3))     // {S3,S2,S1,S0} = 4'b0011
+		  : (S1 == 0 
+		     ? (S0 == 0 
+			? A4       // {S3,S2,S1,S0} = 4'b0100
+			: A5)      // {S3,S2,S1,S0} = 4'b0101
+		     : (S0 == 0 
+			? A6       // {S3,S2,S1,S0} = 4'b0110
+			: A7)))    // {S3,S2,S1,S0} = 4'b0111
+	       : (S2 == 0 
+		  ? (S1 == 0 
+		     ? (S0 == 0 
+			? A8       // {S3,S2,S1,S0} = 4'b1000
+			: A9)      // {S3,S2,S1,S0} = 4'b1001
+		     : (S0 == 0 
+			? A10      // {S3,S2,S1,S0} = 4'b1010
+			: A11))    // {S3,S2,S1,S0} = 4'b1011
+		  : (S1 == 0 
+		     ? (S0 == 0 
+			? A12      // {S3,S2,S1,S0} = 4'b1100
+			: A13)     // {S3,S2,S1,S0} = 4'b1101
+		     : (S0 == 0 
+			? A14      // {S3,S2,S1,S0} = 4'b1110
+			: A15)))); // {S3,S2,S1,S0} = 4'b1111
+endmodule // multiplexer_16_4
+/////////////////////////////////////////////////////////////
+module register_16(Q1,D1,rst,clk);
+input [15:0]D1;
+input clk,rst;
+output [15:0]Q1;
+reg [15:0]Q1;
+
+always @(posedge clk)
+begin
+   if (rst)
+    Q1 <=16'h0;
+ else
+    Q1 <= D1;
+  end
+endmodule
+//////////////////////////////////////////////////////////////////
+module au(b0,b1,b2,b3,uj0,uj1,uj2,uj3,uj4,uj5,uj6,uj7,uj8,uj9,uj10,uj11,uj12,uj13,uj14,uj15,uj16,uj17,uj18,uj19,uj20,uj21,uj22,uj23,uj24,uj25,uj26,uj27,uj28,uj29,uj30,uj31);
+output [15:0]b0,b1,b2,b3;
+input [15:0]uj0,uj1,uj2,uj3,uj4,uj5,uj6,uj7,uj8,uj9,uj10,uj11,uj12,uj13,uj14,uj15,uj16,uj17,uj18,uj19,uj20,uj21,uj22,uj23,uj24,uj25,uj26,uj27,uj28,uj29,uj30,uj31;
+assign b0=uj0+uj4+uj8+uj12+uj16+uj20+uj24+uj28;
+assign b1=uj1+uj5+uj9+uj13+uj17+uj21+uj25+uj29;
+assign b2=uj2+uj6+uj10+uj14+uj18+uj22+uj26+uj30;
+assign b3=uj3+uj7+uj11+uj15+uj19+uj23+uj27+uj31;
+endmodule
+//////////////////////////////////////////////////////////////////////////////
+//TEST BENCH VERILOG CODE	
+module adf_tb;
+	// Inputs
+	reg [7:0] xk0;
+	reg [7:0] xk1;
+	reg [7:0] xk2;
+	reg [7:0] xk3;
+	reg [15:0] dk0;
+	reg [15:0] dk1;
+	reg [15:0] dk2;
+	reg [15:0] dk3;
+	reg sel;
+	reg [3:0] muu;
+	reg rst;
+	reg clk;
+	// Outputs
+	wire [15:0] yk0;
+	wire [15:0] yk1;
+	wire [15:0] yk2;
+	wire [15:0] yk3;
+	// Instantiate the Unit Under Test (UUT)
+	adf uut (
+		.yk0(yk0), 
+		.yk1(yk1), 
+		.yk2(yk2), 
+		.yk3(yk3), 
+		.xk0(xk0), 
+		.xk1(xk1), 
+		.xk2(xk2), 
+		.xk3(xk3), 
+		.dk0(dk0), 
+		.dk1(dk1), 
+		.dk2(dk2), 
+		.dk3(dk3), 
+		.sel(sel), 
+		.muu(muu), 
+		.rst(rst), 
+		.clk(clk)
+	);
+	initial begin
+		// Initialize Inputs
+		xk0 = 8'h4;
+		xk1 = 8'h1;
+		xk2 = 8'h2;
+		xk3 = 8'h3;
+		dk0 = 16'h5710;
+		dk1 = 16'h5710;
+		dk2 = 16'h5710;
+		dk3 = 16'h5710;
+		sel = 1'b0;
+		muu = 4'hd;
+		rst = 1'b1;
+		clk = 1'b0;
+		// Wait 100 ns for global reset to finish
+		#200;      
+		// Add stimulus here
+	end
+always
+begin
+#50 clk=~clk;
+end
+always
+begin
+#30 sel=~sel;
+end
+always
+begin
+#100 rst=1'b0;
+end              
+endmodule
+//////////////////////////////////////////////////////////////////////////////////////////////
+************VERILOG CODES FOR DIFFERENT MULTIPLIERS CONSIDERED IN THIS DESIGN************************
+/////////////////////////////////////////////////////////////////////////////////////////////
+//**1**
+module multiplier(outm,a,b);
+input [7:0]a,b;
+output [15:0]outm;
+assign outm = a*b;
+endmodule
+///////////////////////////////////////////////////////////////
+//**2**ARRAY MULTIPLIER
+module multiplier(p,a,b);
+input [7:0]a,b;
+output [15:0]p;
+wire [49:0]s,c;
+assign p[0]=a[0]&b[0];
+ha ha1(s[0],c[0],a[0]&b[1],a[1]&b[0]);
+fa fa1(s[1],c[1],c[0],a[2]&b[0],a[1]&b[1]);
+fa fa2(s[2],c[2],a[0]&b[2],s[1],c[1]);
+fa fa3(s[3],c[3],c[2],a[3]&b[0],a[2]&b[1]);
+fa fa4(s[4],c[4],s[3],c[3],a[1]&b[2]);
+fa fa5(s[5],c[5],s[4],c[4],a[0]&b[3]);
+fa fa6(s[6],c[6],c[5],a[4]&b[0],a[3]&b[1]);
+fa fa7(s[7],c[7],s[6],c[6],a[2]&b[2]);
+fa fa8(s[8],c[8],s[7],c[7],a[1]&b[3]);
+fa fa9(s[9],c[9],s[8],c[8],a[0]&b[4]);
+fa fa10(s[10],c[10],c[9],a[5]&b[0],a[4]&b[1]);
+fa fa11(s[11],c[11],s[10],c[10],a[3]&b[2]);
+fa fa12(s[12],c[12],s[11],c[11],a[2]&b[3]);
+fa fa13(s[13],c[13],s[12],c[12],a[1]&b[4]);
+fa fa14(s[14],c[14],s[13],c[13],a[0]&b[5]);
+fa fa15(s[15],c[15],c[14],a[6]&b[0],a[5]&b[1]);
+fa fa16(s[16],c[16],s[15],c[15],a[4]&b[2]);
+fa fa17(s[17],c[17],s[16],c[16],a[3]&b[3]);
+fa fa18(s[18],c[18],s[17],c[17],a[2]&b[4]);
+fa fa19(s[19],c[19],s[18],c[18],a[1]&b[5]);
+fa fa20(s[20],c[20],s[19],c[19],a[0]&b[6]);
+fa fa21(s[21],c[21],c[20],a[7]&b[0],a[6]&b[1]);
+fa fa22(s[22],c[22],s[21],c[21],a[5]&b[2]);
+fa fa23(s[23],c[23],s[22],c[22],a[4]&b[3]);
+fa fa24(s[24],c[24],s[23],c[23],a[3]&b[4]);
+fa fa25(s[25],c[25],s[24],c[24],a[2]&b[5]);
+fa fa26(s[26],c[26],s[25],c[25],a[1]&b[6]);
+fa fa27(s[27],c[27],s[26],c[26],a[0]&b[7]);
+fa fa28(s[28],c[28],c[27],a[7]&b[1],a[6]&b[2]);
+fa fa29(s[29],c[29],s[28],c[28],a[5]&b[3]);
+fa fa30(s[30],c[30],s[29],c[29],a[4]&b[4]);
+fa fa31(s[31],c[31],s[30],c[30],a[3]&b[5]);
+fa fa32(s[32],c[32],s[31],c[31],a[2]&b[6]);
+fa fa33(s[33],c[33],s[32],c[32],a[1]&b[7]);
+fa fa34(s[34],c[34],c[33],a[7]&b[2],a[6]&b[3]);
+fa fa35(s[35],c[35],s[34],c[34],a[5]&b[4]);
+fa fa36(s[36],c[36],s[35],c[35],a[4]&b[5]);
+fa fa37(s[37],c[37],s[36],c[36],a[3]&b[6]);
+fa fa38(s[38],c[38],s[37],c[37],a[2]&b[7]);
+fa fa39(s[39],c[39],c[38],a[7]&b[3],a[6]&b[4]);
+fa fa40(s[40],c[40],s[39],c[39],a[5]&b[5]);
+fa fa41(s[41],c[41],s[40],c[40],a[4]&b[6]);
+fa fa42(s[42],c[42],s[41],c[41],a[3]&b[7]);
+fa fa43(s[43],c[43],c[42],a[7]&b[4],a[6]&b[5]);
+fa fa44(s[44],c[44],s[43],c[43],a[5]&b[6]);
+fa fa45(s[45],c[45],s[44],c[44],a[4]&b[7]);
+fa fa46(s[46],c[46],c[45],a[7]&b[5],a[6]&b[6]);
+fa fa47(s[47],c[47],s[46],c[46],a[5]&b[7]);
+fa fa48(s[48],c[48],c[47],a[7]&b[6],a[6]&b[7]);
+ha ha2(s[49],c[49],c[48],a[7]&b[7]);
+assign p[1]=s[0];
+assign p[2]=s[2];
+assign p[3]=s[5];
+assign p[4]=s[9];
+assign p[5]=s[14];
+assign p[6]=s[20];
+assign p[7]=s[27];
+assign p[8]=s[33];
+assign p[9]=s[38];
+assign p[10]=s[42];
+assign p[11]=s[45];
+assign p[12]=s[47];
+assign p[13]=s[48];
+assign p[14]=s[49];
+assign p[15]=c[49];
+endmodule
+////////////////////////////
+module fa (sum,carry,a,b,c );
+output sum ;
+output carry ;
+input a ;
+input b ;
+input c ;  
+assign sum = a ^ b ^ c;   
+assign carry = (a&b) | (b&c) | (c&a);
+endmodule
+////////////////////////////////
+module ha(sum,carry,a,b);
+input a,b;
+output carry,sum;
+assign sum=a^b;
+assign carry=a&b;
+endmodule
+///////////////////////////////////////
+//**3**VEDIC MULTIPLIER
+module multiplier(c,a,b);   
+input [7:0]a;
+input [7:0]b;
+output [15:0]c;
+wire [15:0]q0;	
+wire [15:0]q1;	
+wire [15:0]q2;
+wire [15:0]q3;	
+wire [15:0]c;
+wire [7:0]temp1;
+wire [11:0]temp2;
+wire [11:0]temp3;
+wire [11:0]temp4;
+wire [7:0]q4;
+wire [11:0]q5;
+wire [11:0]q6;
+// using 4 4x4 multipliers
+vedic_4_x_4 z1(a[3:0],b[3:0],q0[15:0]);
+vedic_4_x_4 z2(a[7:4],b[3:0],q1[15:0]);
+vedic_4_x_4 z3(a[3:0],b[7:4],q2[15:0]);
+vedic_4_x_4 z4(a[7:4],b[7:4],q3[15:0]);
+// stage 1 adders 
+assign temp1 ={4'b0,q0[7:4]};
+add_8_bit z5(q1[7:0],temp1,q4);
+assign temp2 ={4'b0,q2[7:0]};
+assign temp3 ={q3[7:0],4'b0};
+add_12_bit z6(temp2,temp3,q5);
+assign temp4={4'b0,q4[7:0]};
+// stage 2 adder
+add_12_bit z7(temp4,q5,q6);
+// fnal output assignment 
+assign c[3:0]=q0[3:0];
+assign c[15:4]=q6[11:0];
+endmodule
+///////////////////////////////////////////
+module add_8_bit ( a ,b ,sum ,carry );
+output [7:0] sum ;
+output carry ;
+input [7:0] a ;
+input [7:0] b ; 
+wire [6:0]s;
+full_adder u0 (a[0],b[0],1'b0,sum[0],s[0]);
+full_adder u1 (a[1],b[1],s[0],sum[1],s[1]);
+full_adder u2 (a[2],b[2],s[1],sum[2],s[2]);
+full_adder u3 (a[3],b[3],s[2],sum[3],s[3]);
+full_adder u4 (a[4],b[4],s[3],sum[4],s[4]);
+full_adder u5 (a[5],b[5],s[4],sum[5],s[5]);
+full_adder u6 (a[6],b[6],s[5],sum[6],s[6]);
+full_adder u7 (a[7],b[7],s[6],sum[7],carry);
+endmodule
+////////////////////////////////
+module add_12_bit ( a ,b ,sum ,carry );
+output [11:0] sum ;
+output carry ;
+input [11:0] a ;
+input [11:0] b ; 
+wire [10:0]s;
+full_adder u0 (a[0],b[0],1'b0,sum[0],s[0]);
+full_adder u1 (a[1],b[1],s[0],sum[1],s[1]);
+full_adder u2 (a[2],b[2],s[1],sum[2],s[2]);
+full_adder u3 (a[3],b[3],s[2],sum[3],s[3]);
+full_adder u4 (a[4],b[4],s[3],sum[4],s[4]);
+full_adder u5 (a[5],b[5],s[4],sum[5],s[5]);
+full_adder u6 (a[6],b[6],s[5],sum[6],s[6]);
+full_adder u7 (a[7],b[7],s[6],sum[7],s[7]);
+full_adder u8 (a[8],b[8],s[7],sum[8],s[8]);
+full_adder u9 (a[9],b[9],s[8],sum[9],s[9]);
+full_adder u10 (a[10],b[10],s[9],sum[10],s[10]);
+full_adder u11 (a[11],b[11],s[10],sum[11],carry);
+endmodule
+////////////////////////////////
+module vedic_4_x_4(a,b,c);
+input [3:0]a;
+input [3:0]b;
+output [7:0]c;
+wire [3:0]q0;	
+wire [3:0]q1;	
+wire [3:0]q2;
+wire [3:0]q3;	
+wire [7:0]c;
+wire [3:0]temp1;
+wire [5:0]temp2;
+wire [5:0]temp3;
+wire [5:0]temp4;
+wire [3:0]q4;
+wire [5:0]q5;
+wire [5:0]q6;
+// using 4 2x2 multipliers
+vedic_2_x_2 z1(a[1:0],b[1:0],q0[3:0]);
+vedic_2_x_2 z2(a[3:2],b[1:0],q1[3:0]);
+vedic_2_x_2 z3(a[1:0],b[3:2],q2[3:0]);
+vedic_2_x_2 z4(a[3:2],b[3:2],q3[3:0]);
+// stage 1 adders 
+assign temp1 ={2'b0,q0[3:2]};
+add_4_bit z5(q1[3:0],temp1,q4);
+assign temp2 ={2'b0,q2[3:0]};
+assign temp3 ={q3[3:0],2'b0};
+add_6_bit z6(temp2,temp3,q5);
+assign temp4={2'b0,q4[3:0]};
+// stage 2 adder 
+add_6_bit z7(temp4,q5,q6);
+// fnal output assignment 
+assign c[1:0]=q0[1:0];
+assign c[7:2]=q6[5:0];
+endmodule
+////////////////////////
+module add_4_bit ( a ,b ,sum ,carry );
+output [3:0] sum ;
+output carry ;
+input [3:0] a ;
+input [3:0] b ; 
+wire [2:0]s;
+full_adder u0 (a[0],b[0],1'b0,sum[0],s[0]);
+full_adder u1 (a[1],b[1],s[0],sum[1],s[1]);
+full_adder u2 (a[2],b[2],s[1],sum[2],s[2]);
+full_adder u3 (a[3],b[3],s[2],sum[3],carry);
+endmodule
+///////////////////////////////
+module add_6_bit ( a ,b ,sum ,carry );
+output [5:0] sum ;
+output carry ;
+input [5:0] a ;
+input [5:0] b ; 
+wire [4:0]s;
+full_adder u0 (a[0],b[0],1'b0,sum[0],s[0]);
+full_adder u1 (a[1],b[1],s[0],sum[1],s[1]);
+full_adder u2 (a[2],b[2],s[1],sum[2],s[2]);
+full_adder u3 (a[3],b[3],s[2],sum[3],s[3]);
+full_adder u4 (a[4],b[4],s[3],sum[4],s[4]);
+full_adder u5 (a[5],b[5],s[4],sum[5],carry);
+endmodule
+////////////////////////////////
+module full_adder ( a ,b ,c ,sum ,carry );
+output sum ;
+output carry ;
+input a ;
+input b ;
+input c ;   
+assign sum = a ^ b ^ c;   
+assign carry = (a&b) | (b&c) | (c&a);
+endmodule
+////////////////////////////////
+module vedic_2_x_2(a,b,c);
+input [1:0]a;
+input [1:0]b;
+output [3:0]c;
+wire [3:0]c;
+wire [3:0]temp;
+//stage 1
+// four multiplication operation of bits accourding to vedic logic done using and gates 
+assign c[0]=a[0]&b[0]; 
+assign temp[0]=a[1]&b[0];
+assign temp[1]=a[0]&b[1];
+assign temp[2]=a[1]&b[1];
+//stage two 
+// using two half adders 
+ha z1(temp[0],temp[1],c[1],temp[3]);
+ha z2(temp[2],temp[3],c[2],c[3]);
+endmodule
+/////////////////////
+module ha(a,b,sum,carry);
+input a,b;
+output carry,sum;
+assign sum=a^b;
+assign carry=a&b;
+endmodule
+//////////////////////////////////////////////////
+//**3**WALLACE MULTIPLIER
+module multiplier(p,x,y);
+input [7:0]x,y;
+output [15:0]p;
+wire [55:0]s,c;
+assign p[0]=x[0]&y[0];
+HA HA1(s[0],c[0],x[0]&y[1],x[1]&y[0]);
+FA FA1(s[1],c[1],x[1]&y[1],x[2]&y[0],c[0]);
+HA HA2(s[2],c[2],s[1],x[0]&y[2]);
+FA FA2(s[3],c[3],x[2]&y[1],x[3]&y[0],c[1]);
+FA FA3(s[4],c[4],s[3],x[1]&y[2],c[2]);
+HA HA3(s[5],c[5],s[4],x[0]&y[3]);
+FA FA4(s[6],c[6],x[3]&y[1],x[4]&y[0],c[3]);
+FA FA5(s[7],c[7],s[6],x[2]&y[2],c[4]);
+FA FA6(s[8],c[8],s[7],x[1]&y[3],c[5]);
+HA HA4(s[9],c[9],s[8],x[0]&y[4]);
+FA FA7(s[10],c[10],x[4]&y[1],x[5]&y[0],c[6]);
+FA FA8(s[11],c[11],s[10],x[3]&y[2],c[7]);
+FA FA9(s[12],c[12],s[11],x[2]&y[3],c[8]);
+FA FA10(s[13],c[13],s[12],x[1]&y[4],c[9]);
+HA HA5(s[14],c[14],s[13],x[0]&y[5]);
+FA FA11(s[15],c[15],x[5]&y[1],x[6]&y[0],c[10]);
+FA FA12(s[16],c[16],s[15],x[4]&y[2],c[11]);
+FA FA13(s[17],c[17],s[16],x[3]&y[3],c[12]);
+FA FA14(s[18],c[18],s[17],x[2]&y[4],c[13]);
+FA FA15(s[19],c[19],s[18],x[1]&y[5],c[14]);
+HA HA6(s[20],c[20],s[19],x[0]&y[6]);
+FA FA16(s[21],c[21],x[6]&y[1],x[7]&y[0],c[15]);
+FA FA17(s[22],c[22],s[21],x[5]&y[2],c[16]);
+FA FA18(s[23],c[23],s[22],x[4]&y[3],c[17]);
+FA FA19(s[24],c[24],s[23],x[3]&y[4],c[18]);
+FA FA20(s[25],c[25],s[24],x[2]&y[5],c[19]);
+FA FA21(s[26],c[26],s[25],x[1]&y[6],c[20]);
+HA HA7(s[27],c[27],s[26],x[0]&y[7]);
+FA FA22(s[28],c[28],x[6]&y[2],x[7]&y[1],c[21]);
+FA FA23(s[29],c[29],s[28],x[5]&y[3],c[22]);
+FA FA24(s[30],c[30],s[29],x[4]&y[4],c[23]);
+FA FA25(s[31],c[31],s[30],x[3]&y[5],c[24]);
+FA FA26(s[32],c[32],s[31],x[2]&y[6],c[25]);
+FA FA27(s[33],c[33],s[32],x[1]&y[7],c[26]);
+HA HA8(s[34],c[34],s[33],c[27]);
+FA FA28(s[35],c[35],x[6]&y[3],x[7]&y[2],c[28]);
+FA FA29(s[36],c[36],s[35],x[5]&y[4],c[29]);
+FA FA30(s[37],c[37],s[36],x[4]&y[5],c[30]);
+FA FA31(s[38],c[38],s[37],x[3]&y[6],c[31]);
+FA FA32(s[39],c[39],s[38],x[2]&y[7],c[32]);
+FA FA33(s[40],c[40],s[39],c[33],c[34]);
+FA FA34(s[41],c[41],x[6]&y[4],x[7]&y[3],c[35]);
+FA FA35(s[42],c[42],s[41],x[5]&y[5],c[36]);
+FA FA36(s[43],c[43],s[42],x[4]&y[6],c[37]);
+FA FA37(s[44],c[44],s[43],x[3]&y[7],c[38]);
+FA FA38(s[45],c[45],s[44],c[39],c[40]);
+FA FA39(s[46],c[46],x[6]&y[5],x[7]&y[4],c[41]);
+FA FA40(s[47],c[47],s[41],x[5]&y[6],c[42]);
+FA FA41(s[48],c[48],s[42],x[4]&y[7],c[43]);
+FA FA42(s[49],c[49],s[43],c[44],c[45]);
+FA FA43(s[50],c[50],x[6]&y[6],x[7]&y[5],c[46]);
+FA FA44(s[51],c[51],s[50],x[5]&y[7],c[47]);
+FA FA45(s[52],c[52],s[51],c[48],c[49]);
+FA FA46(s[53],c[53],x[6]&y[7],x[7]&y[6],c[50]);
+FA FA47(s[54],c[54],s[53],c[51],c[52]);
+FA FA48(s[55],c[55],x[7]&y[7],c[53],c[54]);
+assign p[1]=s[0];
+assign p[2]=s[2];
+assign p[3]=s[5];
+assign p[4]=s[9];
+assign p[5]=s[14];
+assign p[6]=s[20];
+assign p[7]=s[27];
+assign p[8]=s[34];
+assign p[9]=s[40];
+assign p[10]=s[45];
+assign p[11]=s[49];
+assign p[12]=s[52];
+assign p[13]=s[54];
+assign p[14]=s[55];
+assign p[15]=c[55];
+endmodule
+////////////////////////////////////////////
+module HA(sum,carry,a,b);
+input a,b;
+output sum,carry;
+assign sum=a^b;
+assign carry=a&b;
+endmodule
+/////////////////////////////////////////////////
+module FA(sum,carry,a,b,cin);
+input a,b,cin;
+output sum,carry;
+reg T1,T2,T3,carry;
+assign sum=a^b^cin;
+always @(a or b or cin)
+begin
+T1=a&b;
+T2=a&cin;
+T3=a&cin;
+carry=T1|T2|T3;
+end
+endmodule
+///////////////////////////////////////////////////////////////////////////////////
