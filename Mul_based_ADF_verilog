@@ -767,3 +767,38 @@ carry=T1|T2|T3;
 end
 endmodule
 ///////////////////////////////////////////////////////////////////////////////////
+FPGA VERRIFICATION VERILOG CODE FOR IPC USED IN PROCESSING ELEMENT BLOCK OF ADAPTIVE FILTER(PE)
+module ipc(sum);
+output [15:0]sum;
+wire [7:0]x1,x2,x3,x4,y1,y2,y3,y4;
+wire [15:0]pdt0,pdt1,pdt2,pdt3,out1,out2;
+assign x1=8'h4;
+assign x2=8'h1;
+assign x3=8'h2;
+assign x4=8'h3;
+assign y1=8'h7;
+assign y2=8'h6;
+assign y3=8'h7;
+assign y4=8'h7;
+multiplier mul1(pdt0,x1,y1);
+multiplier mul2(pdt1,x2,y2);
+multiplier mul3(pdt2,x3,y3);
+multiplier mul4(pdt3,x4,y4);
+addertree at1(sum,pdt0,pdt1,pdt2,pdt3);
+endmodule
+//////////////////////////////////////
+module multiplier(outm,a,b);
+output [15:0]outm;
+input [7:0]a,b;
+assign outm=a*b;
+endmodule
+////////////////////////////////////
+module addertree(out,a,b,c,d);
+output [15:0]out;
+input [15:0]a,b,c,d;
+wire [15:0]out1,out2;
+assign out1=a+b;
+assign out2=c+d;
+assign out=out1+out2;
+endmodule
+///////////////////////////////////////////////////////////////////////////////////
