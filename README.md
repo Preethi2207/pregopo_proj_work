@@ -1,2 +1,2 @@
 # pregopo_proj_work
-Freq_Gen and Re_Ti_Op_Sys were coded using C in Embedded C for design of low frequency generator and design of real time operating system respectively. Cache_arch was coded using C in visual studio c++. DSP_MAT_Codes include Digital Signal Processing Matlab code solutions for different problem statements 
+Freq_Gen and Re_Ti_Op_Sys were coded using C in Embedded C for design of low frequency generator and design of real time operating system respectively. Cache_arch was coded using C in visual studio c++. DSP_MAT_Codes include Digital Signal Processing Matlab code solutions for different problem statements. Mul_based_ADF_verilog include code written using verilog for a multiplier based adaptive filter utilizing Block LMS Algorithm.
