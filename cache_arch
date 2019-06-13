@@ -1,0 +1,1021 @@
+Cache Controller Architecture
+// Including the header files
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <conio.h>
+#include <stdint.h>
+#include "nrutil.h”
+//Global variables declaration
+bool d[131072][16]; //d[MAX_LINES][MAX_WAYS]
+bool valid[131072][16];// valid
+uint32_t offset;
+uint32_t n, w;
+uint32_t totalbytesread;
+uint32_t totalbyteswritten;
+uint32_t tagnum;
+uint32_t way;
+uint32_t r;
+uint32_t line;
+uint32_t RC_num=0;
+uint32_t tempRC=0;
+uint32_t tempWC=0;
+uint32_t add;// address
+uint32_t RM;//read memory
+uint32_t WM;// write memory
+uint32_t RC;// read cache
+uint32_t WC;// write cache
+uint32_t hitRd;// hit read
+uint32_t hitWr;// hit write
+uint32_t RCH;//read cache hit
+uint32_t WCH;//write cache hit
+uint32_t RCM;//read cache miss
+uint32_t WCM;//write cache miss
+uint32_t RCD;//read cache dirt
+uint32_t RCR;//read cache replacement
+uint32_t WCD;//write cache dirty
+uint32_t WCR;//write cache replacement
+uint32_t WS;// write strategy
+uint32_t B, BL, L, N, S = 256 * 1024; //256kB cache
+uint32_t LRU[131072][16];//least recently used
+uint32_t tag[131072][16];// tag
+uint32_t RMCount, RCMCount, RCHCount, RCDCount, RCRCount, RCCount, RDWBCount;//counters
+for read
+uint32_t WMCount, WCMCount, WCHCount, WCDCount, WCRCount, WCCount;// counters for write
+uint32_t FC, WTCount;//Flush counter. write through counter
+uint32_t counter;
+uint32_t wayw;
+uint32_t waywrite;
+uint32_t l, t;
+uint32_t number;
+uint32_t recentway;
+uint32_t burstsize[4] = { 1,2,4,8 };
+uint32_t No_of_ways[5] = { 1,2,4,8,16 };
+//Function for getLine
+uint32_t getLine(uint32_t add, uint32_t n, uint32_t BL)
+{
+line = (add>>offset) & (L-1);
+return (line);
+}
+//Function for getTag
+uint32_t getTag(uint32_t add, uint32_t n, uint32_t BL)
+{
+tagnum = (add) >> (l + offset);
+return(tagnum);
+}
+//Function for findTag in read cache
+//Function for findTag in read cache
+uint32_t findTagread(uint32_t line, uint32_t tagnum, uint32_t nRC)
+{
+for (r = 0; r < N; r++)
+{
+if (tag[line][r] == tagnum && valid[line][r] == 1)
+{
+tempRC = r;
+way = 1;
+return(way);
+}
+}
+return -1;
+}
+//function for findTag in write cache
+uint32_t findTagwrite(uint32_t line, uint32_t tagnum, uint32_t n)
+{
+for (r = 0; r < N; r++)
+{
+if (tag[line][r] == tagnum && valid[line][r] == 1)
+{
+tempWC = r;
+way = 1;
+return(way);
+}
+}
+return -1;
+}
+//Function to update LRU
+uint32_t updateLRU(uint32_t line, uint32_t LRUway)
+{
+uint32_t u;
+for (u = 0; u < N; u++)
+{
+if ((hitRd == 1) || (hitWr == 1))
+{
+if (LRU[line][u] < LRUway)
+{
+LRU[line][u] = LRU[line][u] + 1;
+}
+else if (LRU[line][u] == LRUway)
+{
+LRU[line][u] = 0;
+}
+}
+else
+{
+if (LRU[line][u] == N - 1)
+{
+w = u;
+LRU[line][u] = 0;
+}
+else if (LRU[line][u] < N - 1)
+{
+LRU[line][u] = LRU[line][u] + 1;
+}
+}
+}
+return w;
+}
+// Function to read cache
+void readCache(uint32_t add, uint32_t n, uint32_t BL)
+{
+line = getLine(add, n, BL);
+tagnum = getTag(add, n, BL);
+way = findTagread(line, tagnum, n);
+hitRd = (way != -1);
+RCCount++; //increment read cache to cpu count
+if (!hitRd)
+{
+for (uint32_t a = 0; a < N; a++)
+{
+if ((LRU[line][a] == N - 1) && (valid[line][a] == 1))
+{
+RDWBCount++; //increment read writeback count
+if (d[line][a])
+{
+RCDCount++; //increment read cache dirty bit
+RCRCount++; //increment read cache replacement bit
+d[line][a] = 0;
+recentway = a;
+updateLRU(line, recentway);
+valid[line][a] = 0;
+tag[line][a] = tagnum;
+RMCount++; // increment read memory to cache count
+valid[line][a] = 1;
+}
+else
+{
+valid[line][a] = 1;
+d[line][a] = 0;
+RCRCount++;
+recentway=a;
+updateLRU(line, recentway);
+}
+}
+}
+}
+if(hitRd)
+{
+RCHCount++; //increment read cache hit count
+recentway = tempRC;
+updateLRU(line, recentway);
+}
+else
+{
+RCMCount++; //increment read cache miss count
+}
+}
+// Function for reading memory
+void readMem(void *pmem, int size)
+{
+add = (unsigned long int)pmem;
+add = add & 0xFFFFFF;
+uint32_t lastline = -1;
+for (RC_num = 0; RC_num < size; RC_num++)
+{
+line = getLine(add, n, BL);
+if (line != lastline)
+{
+readCache(add, n, BL);
+lastline = line;
+}
+add++;
+}
+totalbytesread += size;
+}
+void writeCache(uint32_t add, uint32_t n, uint32_t BL)
+{
+WCCount++; //write cache count increment
+tagnum = getTag(add, n, BL);
+line = getLine(add, n, BL);
+wayw = findTagwrite(line, tagnum, n);
+hitWr = (wayw != -1);
+if ((!hitWr) && (WS != 2))
+{
+waywrite = updateLRU(line, recentway); //finding LRU value
+WCMCount++; //Write cache miss count increment
+if ((LRU[line][waywrite] == 0 && valid[line][waywrite] == 1))
+{
+if ((d[line][waywrite] == 1) && (WS == 0))
+{
+WCDCount++; //increment write dirty count
+WCRCount++;
+WMCount++;
+tag[line][waywrite] = tagnum;
+valid[line][waywrite] = 1;
+d[line][waywrite] = 1;
+}
+else
+{
+WCRCount++; //increment write cache replacement count
+WTCount++; //increment write through count
+tag[line][waywrite] = tagnum;
+d[line][waywrite] = 0;
+valid[line][waywrite] = 1;
+}
+}
+if (LRU[line][waywrite] == 0 && valid[line][waywrite] == 0)
+{
+if (WS == 0)
+{
+WCRCount++;
+d[line][waywrite] = 1;
+tag[line][waywrite] = tagnum;
+valid[line][waywrite] = 1;
+}
+else
+{
+WCRCount++;
+WTCount++;
+d[line][waywrite] = 0;
+tag[line][waywrite] = tagnum;
+valid[line][waywrite] = 1;
+}
+}
+}
+if (hitWr)
+{
+WCHCount++; //increment write cache hit count
+valid[line][tempWC] = 1;
+tag[line][tempWC] = tagnum;
+recentway = tempWC;
+updateLRU(line, recentway);
+if (WS == 0)
+{
+d[line][tempWC] = 1;
+}
+else
+{
+d[line][tempWC] = 0;
+}
+}
+}
+void writeMem(void *pmem, int size)
+{
+add = (unsigned long int)pmem;
+add = add & 0xFFFFFF;
+uint32_t lastline = -1;
+for (RC_num = 0; RC_num < size; RC_num++)
+{
+line = getLine(add, n, BL);
+if (line != lastline)
+{
+writeCache(add, n, BL);
+lastline = line;
+}
+}
+totalbyteswritten += size;
+}
+//Clearing the cache initially
+void ZeroCache()
+{
+int x, j;
+for (x = 0; x < L; x++)
+{
+for (j = 0; j < N; j++)
+{
+d[x][j] = 0;
+valid[x][j] = 0;
+tag[x][j] = 0;
+LRU[x][j] = 0;
+}
+}
+// CLEARING READ COUNTER
+RMCount = 0;
+RCCount = 0;
+RCMCount = 0;
+RCHCount = 0;
+RCDCount = 0;
+RCRCount = 0;
+RDWBCount = 0;
+// CLEARING WRITE COUNTER
+WMCount = 0;
+WCCount = 0;
+WCMCount = 0;
+WCHCount = 0;
+WCDCount = 0;
+WCRCount = 0;
+// Clearing flushDirtyCount and Write throughcount (WTCount)
+FC = 0;
+WTCount = 0;
+}
+// Clearing dirty bit
+void flushcache()
+{
+int x, j;
+for (x = 0; x < L; x++)
+{
+for (j = 0; j < N; j++)
+{
+if (d[x][j] == 1)
+{
+FC++;
+d[x][j] = 0;
+}
+}
+}
+}
+void cholsl(double **a, int n, double p[], double b[], double x[])
+{
+int i, k;
+double sum;
+writeMem(&i, sizeof(i));
+readMem(&i, sizeof(i));
+readMem(&n, sizeof(n));
+for (i = 1; i <= n; i++)
+{
+writeMem(&sum, sizeof(sum));
+readMem(&sum, sizeof(sum));
+readMem(&i, sizeof(i));
+readMem(&b[i], sizeof(b[i]));
+writeMem(&k, sizeof(k));
+readMem(&k, sizeof(k));
+for (sum = b[i], k = i - 1; k >= 1; k--)
+{
+readMem(&i, sizeof(i));
+readMem(&k, sizeof(k));
+readMem(&a[i][k], sizeof(a[i][k]));
+readMem(&x[k], sizeof(x[k]));
+writeMem(&sum, sizeof(sum));
+sum -= a[i][k] * x[k];
+readMem(&k, sizeof(k));
+writeMem(&k, sizeof(k));
+}
+readMem(&sum, sizeof(sum));
+readMem(&i, sizeof(i));
+readMem(&p[i], sizeof(p[i]));
+writeMem(&x[i], sizeof(x[i]));
+x[i] = sum / p[i];
+readMem(&i, sizeof(i));
+writeMem(&i, sizeof(i));
+readMem(&n, sizeof(n));
+}
+writeMem(&i, sizeof(i));
+readMem(&i, sizeof(i));
+readMem(&n, sizeof(n));
+for (i = n; i >= 1; i--)
+{
+writeMem(&sum, sizeof(sum));
+readMem(&sum, sizeof(sum));
+readMem(&i, sizeof(i));
+readMem(&x[i], sizeof(x[i]));
+writeMem(&k, sizeof(k));
+readMem(&k, sizeof(k));
+readMem(&n, sizeof(n));
+for (sum = x[i], k = i + 1; k <= n; k++)
+{
+readMem(&i, sizeof(i));
+readMem(&k, sizeof(k));
+readMem(&a[i][k], sizeof(a[i][k]));
+readMem(&x[k], sizeof(x[k]));
+writeMem(&sum, sizeof(sum));
+sum -= a[k][i] * x[k];
+readMem(&k, sizeof(k));
+writeMem(&k, sizeof(k));
+readMem(&n, sizeof(n));
+}
+readMem(&sum, sizeof(sum));
+readMem(&i, sizeof(i));
+readMem(&p[i], sizeof(p[i]));
+writeMem(&x[i], sizeof(x[i]));
+x[i] = sum / p[i];
+readMem(&i, sizeof(i));
+writeMem(&i, sizeof(i));
+}
+}
+void choldc(double **a, int n, double p[])
+{
+int i, j, k;
+double sum;
+double temp;
+writeMem(&i, sizeof(i));
+readMem(&i, sizeof(i));
+readMem(&n, sizeof(n));
+for (i = 1; i <= n; i++)
+{
+writeMem(&j, sizeof(j));
+readMem(&j, sizeof(j));
+readMem(&n, sizeof(n));
+for (j = i; j <= n; j++)
+{
+writeMem(&sum, sizeof(sum));
+readMem(&sum, sizeof(sum));
+readMem(&i, sizeof(i));
+readMem(&j, sizeof(j));
+readMem(&a[i][j], sizeof(a[i][j]));
+writeMem(&k, sizeof(k));
+readMem(&k, sizeof(k));
+for (sum = a[i][j], k = i - 1; k >= 1; k--)
+{
+readMem(&i, sizeof(i));
+readMem(&k, sizeof(k));
+readMem(&a[i][k], sizeof(a[i][k]));
+readMem(&j, sizeof(j));
+readMem(&a[j][k], sizeof(a[j][k]));
+writeMem(&sum, sizeof(sum));
+sum -= a[i][k] * a[j][k];
+readMem(&k, sizeof(k));
+writeMem(&k, sizeof(k));
+}
+readMem(&i, sizeof(i));
+readMem(&j, sizeof(j));
+if (i == j)
+{
+readMem(&sum, sizeof(sum));
+if (sum <= 0.0)
+{
+nrerror(" choldc failed");
+}
+readMem(&sum, sizeof(sum));
+readMem(&i, sizeof(i));
+writeMem(&p[i], sizeof(p[i]));
+p[i] = sqrt(sum);
+}
+else
+{
+readMem(&i, sizeof(i));
+readMem(&j, sizeof(j));
+readMem(&p[i], sizeof(p[i]));
+readMem(&sum, sizeof(sum));
+writeMem(&a[j][i], sizeof(a[j][i]));
+a[j][i] = sum / p[i];
+}
+writeMem(&j, sizeof(j));
+readMem(&j, sizeof(j));
+readMem(&n, sizeof(n));
+}
+writeMem(&i, sizeof(i));
+readMem(&i, sizeof(i));
+writeMem(&n, sizeof(n));
+}
+}
+int main(void)
+{
+FILE *arr;
+int size = 256;
+double a[257][257] = { 0.0 };
+arr= fopen("D:\Advanced microprocessor systems\project3", "r");
+int i, j, k, l;
+for (i = 1; i <= 256; i++)
+{
+for (j = 1; j <= 256; j++)
+{
+fscanf(arr, "%lf", &a[i][j]);
+}
+}
+double *aa, *bb, *cc, **dm, **dm1;
+cc = vector(1, size+1);
+bb = vector(1, size+1);
+dm1 = matrix(1, size+1, 1, size+1);
+aa = vector(1, size+1);
+for ( i = 1; i <= size;i++)
+{
+for (j = 1; j <= size; j++)
+{
+dm1[i][j] = a[i][j];
+}
+}
+for (k = 1; k <= size; k++)
+{
+cc[k] = 0.0;
+}
+fclose(arr);
+printf("Cache Architecture using Cholesky Decomposition");
+FILE *pf;
+pf = fopen("architecture.xls", "w+");
+fprintf(pf,
+"WS\t\BL\t\N\tB\tL\tn\t\l\toffset\tt\tRMCount\tRCCount\tRCMCount\tRCHCount\tRCDCount\tRCR
+Count\tRDWBCount\tWMCount\tWCCount\tWCMCount\tWCHCount\tWCDCount\tWCRCount\tFC\
+tWTCount\tTotalbytesread\tTotalbyteswritten");
+for (WS = 0; WS < 3; WS++) // ws=0->Write Back; ws=1->Write Through Allocate; ws=2-
+>Write Through Non-Allocate
+{
+for (int bL = 0; bL < 4; bL++) //BL=1,2,4,8
+{
+BL = burstsize[bL];
+for (int n=0; n < 5; n++)
+{
+N= No_of_ways[n];// n = Number of ways
+B = BL * 2;
+L = S / (B*N);
+offset = log2(B);
+l = log2(L);
+t = 24 - l - offset;
+ZeroCache();
+choldc(dm1, size, bb);
+cholsl(dm1, size, bb,cc, aa);
+flushcache();
+fprintf(pf, "%u\t %u\t %u\t %u\t %u\t %u\t %u\t %u\t %u\t ",WS,
+BL, N, B, L, n, l, offset, t);
+fprintf(pf, "%u\t %u\t %u\t %u\t %u\t %u\t %u\t %u\t %u\t %u\t
+%u\t %u\t %u\t %u\t %u\t %u\t %u\t\n", RMCount, RCCount, RCMCount, RCHCount, RCDCount,
+RCRCount, RDWBCount, WMCount, WCCount, WCMCount, WCHCount, WCDCount, WCRCount, FC,
+WTCount,totalbytesread,totalbyteswritten);
+}
+}
+}
+free_matrix(dm1,1, size+1, 1, size+1);
+free_vector(cc,1, size+1);
+free_vector(bb, 1, size+1);
+free_vector(aa, 1, size+1);
+fclose(pf);
+_getch();
+return 0;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+nrutil.h
+#pragma once
+#pragma once
+#ifndef NRUTIL_H
+#define NRUTIL_H
+#ifdef __STDC__
+#define PI 3.1415926f
+#else
+#define PI 3.1415926
+#endif
+#include <iostream>
+static double sqrarg;
+#define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
+static double dsqrarg;
+#define DSQR(a) ((dsqrarg=(a)) == 0.0 ? 0.0 : dsqrarg*dsqrarg)
+static double dmaxarg1, dmaxarg2;
+#define DMAX(a,b) (dmaxarg1=(a),dmaxarg2=(b),(dmaxarg1) > (dmaxarg2)
+?\
+(dmaxarg1) : (dmaxarg2))
+static double dminarg1, dminarg2;
+#define DMIN(a,b) (dminarg1=(a),dminarg2=(b),(dminarg1) < (dminarg2)
+?\
+(dminarg1) : (dminarg2))
+static double maxarg1, maxarg2;
+#define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
+(maxarg1) : (maxarg2))
+static double minarg1, minarg2;
+#define FMIN(a,b) (minarg1=(a),minarg2=(b),(minarg1) < (minarg2) ?\
+(minarg1) : (minarg2))
+static int lmaxarg1, lmaxarg2;
+#define LMAX(a,b) (lmaxarg1=(a),lmaxarg2=(b),(lmaxarg1) > (lmaxarg2)
+?\
+(lmaxarg1) : (lmaxarg2))
+static int lminarg1, lminarg2;
+#define LMIN(a,b) (lminarg1=(a),lminarg2=(b),(lminarg1) < (lminarg2)
+?\
+(lminarg1) : (lminarg2))
+static int imaxarg1, imaxarg2;
+#define IMAX(a,b) (imaxarg1=(a),imaxarg2=(b),(imaxarg1) > (imaxarg2)
+?\
+(imaxarg1) : (imaxarg2))
+static int iminarg1, iminarg2;
+#define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2)
+?\
+(iminarg1) : (iminarg2))
+#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
+void nrerror(const char* error_text);
+double *vector(int nl, int nh);
+int *ivector(int nl, int nh);
+unsigned long *lvector(int nl, int nh);
+double *dvector(int nl, int nh);
+double **matrix(int nrl, int nrh, int ncl, int nch);
+double **dmatrix(int nrl, int nrh, int ncl, int nch);
+int **imatrix(int nrl, int nrh, int ncl, int nch);
+double **submatrix(double **a, int oldrl, int oldrh, int oldcl, int
+oldch,
+int newrl, int newcl);
+double **convert_matrix(double *a, int nrl, int nrh, int ncl, int
+nch);
+double ***f3tensor(int nrl, int nrh, int ncl, int nch, int ndl, int
+ndh);
+double ***fmatrix3(int nrl, int nrh, int ncl, int nch, int n3l, int
+n3h);
+double ****fmatrix4(int nrl, int nrh, int ncl, int nch, int n3l, int
+n3h, int n4l, int n4h);
+double *****fmatrix5(int nrl, int nrh, int ncl, int nch, int n3l,
+int n3h, int n4l, int n4h, int n5l, int n5h);
+void free_vector(double *v, int nl, int nh);
+void free_ivector(int *v, int nl, int nh);
+void free_dvector(double *v, int nl, int nh);
+void free_matrix(double **m, int nrl, int nrh, int ncl, int nch);
+void free_dmatrix(double **m, int nrl, int nrh, int ncl, int nch);
+void free_imatrix(int **m, int nrl, int nrh, int ncl, int nch);
+void free_submatrix(double **b, int nrl, int nrh, int ncl, int nch);
+void free_convert_matrix(double **b, int nrl, int nrh, int ncl, int
+nch);
+void free_f3tensor(double ***t, int nrl, int nrh, int ncl, int nch,
+int ndl, int ndh);
+void free_fmatrix3(double ***m, int nrl, int nrh, int ncl, int nch,
+int n3l, int n3h);
+void free_fmatrix4(double ****m, int nrl, int nrh, int ncl, int nch,
+int n3l, int n3h, int n4l, int n4h);
+void free_fmatrix5(double *****m, int nrl, int nrh, int ncl, int
+nch, int n3l, int n3h, int n4l, int n4h, int n5l, int n5h);
+unsigned short *usvector(int nl, int nh);
+#endif
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+nrutil.cpp
+#pragma once
+# include <malloc.h>
+# include <cstdio>
+# include <stdio.h>
+# include "nrutil.h"
+# include <string>
+using namespace std;
+#define NR_END 1
+#define FREE_ARG char*
+void free_lvector(unsigned long *v, int nl, int nh)
+/* free an unsigned int vector allocated with lvector() */
+{
+free((FREE_ARG)(v + nl - NR_END));
+}
+unsigned long *lvector(int nl, int nh)
+/* allocate an unsigned int vector with subscript range v[nl..nh] */
+{
+unsigned long *v;
+v = (unsigned long *)malloc((size_t)((nh - nl + 1 + NR_END) * sizeof(int)));
+if (!v) nrerror("allocation failure in lvector()");
+return v - nl + NR_END;
+}
+double ***f3tensor(int nrl, int nrh, int ncl, int nch, int ndl, int ndh)
+/* allocate a float 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh] */
+{
+int i, j, nrow = nrh - nrl + 1, ncol = nch - ncl + 1, ndep = ndh - ndl + 1;
+double ***t;
+/* allocate pointers to pointers to rows */
+t = (double ***)malloc((size_t)((nrow + NR_END) * sizeof(double**)));
+if (!t) nrerror("allocation failure 1 in f3tensor()");
+t += NR_END;
+t -= nrl;
+/* allocate pointers to rows and set pointers to them */
+t[nrl] = (double **)malloc((size_t)((nrow*ncol + NR_END) * sizeof(double*)));
+if (!t[nrl]) nrerror("allocation failure 2 in f3tensor()");
+t[nrl] += NR_END;
+t[nrl] -= ncl;
+/* allocate rows and set pointers to them */
+t[nrl][ncl] = (double *)malloc((size_t)((nrow*ncol*ndep + NR_END) *
+sizeof(double)));
+if (!t[nrl][ncl]) nrerror("allocation failure 3 in f3tensor()");
+t[nrl][ncl] += NR_END;
+t[nrl][ncl] -= ndl;
+for (j = ncl + 1; j <= nch; j++) t[nrl][j] = t[nrl][j - 1] + ndep;
+for (i = nrl + 1; i <= nrh; i++) {
+t[i] = t[i - 1] + ncol;
+t[i][ncl] = t[i - 1][ncl] + ncol * ndep;
+for (j = ncl + 1; j <= nch; j++) t[i][j] = t[i][j - 1] + ndep;
+}
+/* return pointer to array of pointers to rows */
+return t;
+}
+void nrerror(const char* error_text)
+{
+// void exit(int);
+fprintf(stderr, "Numerical Recipes run-time error...\n");
+fprintf(stderr, "%s\n", error_text);
+fprintf(stderr, "...now exiting to system...\n");
+exit(1);
+}
+double *vector(int nl, int nh)
+{
+double *v;
+v = (double *)malloc((unsigned)(nh - nl + 1) * sizeof(double));
+if (!v) nrerror("allocation failure in vector()");
+return v - nl;
+}
+int *ivector(int nl, int nh)
+{
+int *v;
+v = (int *)malloc((unsigned)(nh - nl + 1) * sizeof(int));
+if (!v) nrerror("allocation failure in ivector()");
+return v - nl;
+}
+unsigned short *usvector(int nl, int nh)
+{
+unsigned short *v;
+v = (unsigned short *)malloc((unsigned)(nh - nl + 1) * sizeof(unsigned short));
+if (!v) nrerror("allocation failure in ivector()");
+return v - nl;
+}
+double *dvector(int nl, int nh)
+{
+double *v;
+v = (double *)malloc((unsigned)(nh - nl + 1) * sizeof(double));
+if (!v) nrerror("allocation failure in vector()");
+return v - nl;
+}
+double **matrix(int nrl, int nrh, int ncl, int nch)
+{
+int i;
+double **m;
+m = (double **)malloc((unsigned)(nrh - nrl + 1) * sizeof(double*));
+if (!m) nrerror("allocation failure 1 in matrix()");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (double *)malloc((unsigned)(nch - ncl + 1) * sizeof(double));
+if (!m[i]) nrerror("allocation failure 2 in matrix()");
+m[i] -= ncl;
+}
+return m;
+}
+double **dmatrix(int nrl, int nrh, int ncl, int nch)
+{
+int i;
+double **m;
+m = (double **)malloc((unsigned)(nrh - nrl + 1) * sizeof(double*));
+if (!m) nrerror("allocation failure 1 in dmatrix()");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (double *)malloc((unsigned)(nch - ncl + 1) * sizeof(double));
+if (!m[i]) nrerror("allocation failure 2 in dmatrix()");
+m[i] -= ncl;
+}
+return m;
+}
+int **imatrix(int nrl, int nrh, int ncl, int nch)
+{
+int i, **m;
+m = (int **)malloc((unsigned)(nrh - nrl + 1) * sizeof(int*));
+if (!m) nrerror("allocation failure 1 in imatrix()");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (int *)malloc((unsigned)(nch - ncl + 1) * sizeof(int));
+if (!m[i]) nrerror("allocation failure 2 in imatrix()");
+m[i] -= ncl;
+}
+return m;
+}
+double **submatrix(double **a, int oldrl, int oldrh, int oldcl, int oldch, int newrl, int newcl)
+{
+int i, j;
+double **m;
+m = (double **)malloc((unsigned)(oldrh - oldrl + 1) * sizeof(double*));
+if (!m) nrerror("allocation failure in submatrix()");
+m -= newrl;
+for (i = oldrl, j = newrl; i <= oldrh; i++, j++) m[j] = a[i] + oldcl - newcl;
+return m;
+}
+void free_vector(double *v, int nl, int nh)
+{
+free((char*)(v + nl));
+}
+void free_ivector(int *v, int nl, int nh)
+{
+free((char*)(v + nl));
+}
+void free_dvector(double *v, int nl, int nh)
+{
+free((char*)(v + nl));
+}
+void free_usvector(unsigned short *v, int nl, int nh)
+{
+free((char*)(v + nl));
+}
+void free_matrix(double **m, int nrl, int nrh, int ncl, int nch)
+{
+int i;
+for (i = nrh; i >= nrl; i--) free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+void free_dmatrix(double **m, int nrl, int nrh, int ncl, int nch)
+{
+int i;
+for (i = nrh; i >= nrl; i--) free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+void free_imatrix(int **m, int nrl, int nrh, int ncl, int nch)
+{
+int i;
+for (i = nrh; i >= nrl; i--) free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+void free_submatrix(double **b, int nrl, int nrh, int ncl, int nch)
+{
+free((char*)(b + nrl));
+}
+double **convert_matrix(double *a, int nrl, int nrh, int ncl, int nch)
+{
+int i, j, nrow, ncol;
+double **m;
+nrow = nrh - nrl + 1;
+ncol = nch - ncl + 1;
+m = (double **)malloc((unsigned)(nrow) * sizeof(double*));
+if (!m) nrerror("allocation failure in convert_matrix()");
+m -= nrl;
+for (i = 0, j = nrl; i <= nrow - 1; i++, j++) m[j] = a + ncol * i - ncl;
+return m;
+}
+void free_convert_matrix(double **b, int nrl, int nrh, int ncl, int nch)
+{
+free((char*)(b + nrl));
+}
+double ***dmatrix3(int nrl, int nrh, int ncl, int nch, int n3l, int n3h)
+{
+int i, j;
+double ***m;
+void nrerror(const char *);
+m = (double ***)malloc((unsigned)(nrh - nrl + 1) * sizeof(double**));
+if (!m) nrerror("error in dmatrix3");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (double **)malloc((unsigned)(nch - ncl + 1) * sizeof(double*));
+if (!m[i]) nrerror("error in dmatrix3");
+m[i] -= ncl;
+for (j = ncl; j <= nch; j++) {
+m[i][j] = (double *)malloc((unsigned)(n3h - n3l + 1) * sizeof(double));
+if (!m[i][j]) nrerror("error in dmatrix3");
+m[i][j] -= n3l;
+}
+}
+return m;
+}
+void free_dmatrix3(double ***m, int nrl, int nrh, int ncl, int nch, int n3l, int n3h)
+{
+int i, j;
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+free((char*)(m[i][j] + n3l));
+for (i = nrh; i >= nrl; i--) free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+double ***fmatrix3(int nrl, int nrh, int ncl, int nch, int n3l, int n3h)
+{
+int i, j;
+double ***m;
+m = (double ***)malloc((unsigned)(nrh - nrl + 1) * sizeof(double**));
+if (!m) nrerror("error in fmatrix3");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (double **)malloc((unsigned)(nch - ncl + 1) * sizeof(double*));
+if (!m[i]) nrerror("error in fmatrix3");
+m[i] -= ncl;
+for (j = ncl; j <= nch; j++) {
+m[i][j] = (double *)malloc((unsigned)(n3h - n3l + 1) * sizeof(double));
+if (!m[i][j]) nrerror("error in fmatrix3");
+m[i][j] -= n3l;
+}
+}
+return m;
+}
+void free_fmatrix3(double ***m, int nrl, int nrh, int ncl, int nch, int n3l, int n3h)
+{
+int i, j;
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+free((char*)(m[i][j] + n3l));
+for (i = nrh; i >= nrl; i--) free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+double ****fmatrix4(int nrl, int nrh, int ncl, int nch, int n3l, int n3h, int n4l, int n4h)
+{
+int i, j, k;
+double ****m;
+m = (double ****)malloc((unsigned)(nrh - nrl + 1) * sizeof(double***));
+if (!m) nrerror("error in fmatrix4");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (double ***)malloc((unsigned)(nch - ncl + 1) * sizeof(double**));
+if (!m[i]) nrerror("error in fmatrix4");
+m[i] -= ncl;
+for (j = ncl; j <= nch; j++) {
+m[i][j] = (double **)malloc((unsigned)(n3h - n3l + 1) *
+sizeof(double*));
+if (!m[i][j]) nrerror("error in fmatrix4");
+m[i][j] -= n3l;
+for (k = n3l; k <= n3h; k++) {
+m[i][j][k] = (double *)malloc((unsigned)(n4h - n4l + 1) *
+sizeof(double));
+if (!m[i][j][k]) nrerror("error in fmatrix4");
+m[i][j][k] -= n4l;
+}
+}
+}
+return m;
+}
+void free_fmatrix4(double ****m, int nrl, int nrh, int ncl, int nch, int n3l, int n3h, int n4l, int
+n4h)
+{
+int i, j, k;
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+for (k = n3h; k >= n3l; k--)
+free((char*)(m[i][j][k] + n4l));
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+free((char*)(m[i][j] + n3l));
+for (i = nrh; i >= nrl; i--)
+free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+double *****fmatrix5(int nrl, int nrh, int ncl, int nch, int n3l, int n3h, int n4l, int n4h, int n5l,
+int n5h)
+{
+int i, j, k, l;
+double *****m;
+m = (double *****)malloc((unsigned)(nrh - nrl + 1) * sizeof(double****));
+if (!m) nrerror("error in fmatrix5");
+m -= nrl;
+for (i = nrl; i <= nrh; i++) {
+m[i] = (double ****)malloc((unsigned)(nch - ncl + 1) * sizeof(double***));
+if (!m[i]) nrerror("error in fmatrix5");
+m[i] -= ncl;
+for (j = ncl; j <= nch; j++) {
+m[i][j] = (double ***)malloc((unsigned)(n3h - n3l + 1) *
+sizeof(double**));
+if (!m[i][j]) nrerror("error in fmatrix5");
+m[i][j] -= n3l;
+for (k = n3l; k <= n3h; k++) {
+m[i][j][k] = (double **)malloc((unsigned)(n4h - n4l + 1) *
+sizeof(double*));
+if (!m[i][j][k]) nrerror("error in fmatrix5");
+m[i][j][k] -= n4l;
+for (l = n4l; l <= n4h; l++) {
+m[i][j][k][l] = (double*)malloc((unsigned)(n5h - n5l + 1)
+* sizeof(double));
+if (!m[i][j][k][l]) nrerror("error in fmatrix5");
+m[i][j][k][l] -= n5l;
+}
+}
+}
+}
+return m;
+}
+void free_fmatrix5(double *****m, int nrl, int nrh, int ncl, int nch, int n3l, int n3h, int n4l, int
+n4h, int n5l, int n5h)
+{
+int i, j, k, l;
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+for (k = n3h; k >= n3l; k--)
+for (l = n4h; l >= n4l; l--)
+free((char*)(m[i][j][k][l] + n4l));
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+for (k = n3h; k >= n3l; k--)
+free((char*)(m[i][j][k] + n3l));
+for (i = nrh; i >= nrl; i--)
+for (j = nch; j >= ncl; j--)
+free((char*)(m[i][j] + n3l));
+for (i = nrh; i >= nrl; i--)
+free((char*)(m[i] + ncl));
+free((char*)(m + nrl));
+}
+void free_f3tensor(double ***t, int nrl, int nrh, int ncl, int nch, int ndl, int ndh)
+/* free a double f3tensor allocated by f3tensor() */
+{
+free((FREE_ARG)(t[nrl][ncl] + ndl - NR_END));
+free((FREE_ARG)(t[nrl] + ncl - NR_END));
+free((FREE_ARG)(t + nrl - NR_END));
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////
+REFERENCES USED
+code snippet for nrutil.h and nrutil.cpp is got from
+http://www.bios.unc.edu/research/bias/documents/localSPD/paper1_codes
+////////////////////////////////////////////////////////////////////////////////////////////////
+//IMPORTANT NOTATIONS
+//WS-Write Strategy
+//WS=0 - Write Back
+//WS=1 - Write Through Allocate
+//WS=2 - Write Through Non-Allocate
+//BL-Burst Length
+//N-Way number
+//n- No of ways
+//line-line number
+//LRU-Least Recently Used
+//tagnum-tag number
+//RMCount - Read Memory to Cache Count
+//RCMCount - Read Cache Miss Count
+//RCHCount - Read Cache Hit Count
+//RCDCount - Read Cache Dirty bit Count
+//RCRCount - Read Cache Replacement Count
+//RCCount - Read Cache Count
+//RDWBCount - Read Write Back Count
+//WMCount - Write Memory to Cache Count
+//WCMCount - Write Cache Miss Count
+//WCHCount- Write Cache Hit Count
+//WCDCount-Write Cache Dirty bit Count
+//WCRCount - Write Cache Replacement Count
+//WCCount - Write Cache Count
+//d[][]-dirty bit
+//valid[][] - valid bit
+//totalbytesread - Total number of bytes read
+//totalbyteswritten - Total number of bytes written
+
+//MATLAB CODE USED TO GENERATE 256X256 POSITIVE SYMMETRIC DEFINITE MATRIX FOR
+//CHOLESKY DECOMPOSITION
+clc;
+clear all;
+close all;
+for i=1:256
+for j=1:256
+a(i,j)=rand();
+end
+end
+b=a'*a;
+disp(b);
+dlmwrite('pree.txt',b,'delimiter', '\t','precision',3, 'newline', 'pc' ); //save the output 256x256
+matrix in a file to be used in cholesky decomposition
